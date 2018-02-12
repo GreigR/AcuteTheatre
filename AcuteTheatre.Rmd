@@ -1,0 +1,368 @@
+---
+title: "Analysis of acute theatre usage"
+author: "Dr Greig Russell"
+date: "7 February 2018"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Acute theatre usage
+The aim of this analysis was to consider usage of acute theatres. The original intention was for the analysis to focus on only Nov.2017, but the data was not initially available. The first phase of the analysis therefore focused on June.2017. Subsequently the Nov.2017 data became available, allowing the analysis to be expanding. Comparison of utilization for acute cases between the two months reveals some unexpected differences. 
+
+```{r load_the_libraries, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(knitr)
+library(rmarkdown)
+```
+
+```{r load_the_data, echo=FALSE, message=FALSE, warning=FALSE}
+Column_names <- c(
+  "Counter",
+  "NHI",
+  "Theatre",
+  "Type",
+  "Original_Ward",
+  "Surgeon",
+  "Surgeon_Teach",
+  "Anaesthetist",
+  "Anaesthetist_Teach",
+  "Anaesthetic",
+  "Anaesthetist_Risk",
+  "Operation_Code",
+  "Operation_Code_Extention",
+  "PurchaserNumber",
+  "Patient_Side",
+  "Specialty_Over_ride",
+  "Booking_In_Date",
+  "Booking_In_Time",
+  "Event_Date",
+  "Arrival_In_Anaesthetic_Room",
+  "Anaesthesia_Start",
+  "Patient_Ready_for_Operation",
+  "Operation_Start",
+  "Operation_End",
+  "Recovery_Takeover",
+  "Patient_Opens_Eyes_On_Command",
+  "Recovery_Complete",
+  "Left_Recovery",
+  "Anaesthetic_Time",
+  "Operation_Time",
+  "Scrub_Nurse",
+  "Charge_Nurse",
+  "Anaesthetic_Assist",
+  "AnaestheticAssistTeach",
+  "Problem_Code",
+  "DirectMaterialCost",
+  "Planned_Return",
+  "SessionCode",
+  "Verified",
+  "Episode",
+  "AdmissionType",
+  "Modified",
+  "ModifiedBy",
+  "Processed",
+  "Created",
+  "EventComments",
+  "TheatreOther",
+  "PlannedOperation",
+  "GRN",
+  "Admission_Date",
+  "AdmissionWard",
+  "EpisodeWhole",
+  "TimeOut",
+  "UnplannedReturn",
+  "Problem_Description",
+  "Group_Description",
+  "Specialty_Description",
+  "SpecialtyCode",
+  "Operation_Description"
+)
+
+OTIS <- read_csv("/home/greig/R-projects/Clinical_audits/Theatre/OTIS_rawData.csv", col_names = Column_names, skip = 1)
+```
+
+```{r tidy_the_data, echo=FALSE, message=FALSE, warning=FALSE}
+OTIS$Operation_Start <- as.character(OTIS$Operation_Start)
+OTIS$Operation_End <- as.character(OTIS$Operation_End)
+
+OTIS$Operation_Start <- paste(OTIS$Event_Date, OTIS$Operation_Start, sep = " ")
+OTIS$Operation_End <- paste(OTIS$Event_Date, OTIS$Operation_End, sep = " ")
+OTIS$Anaesthesia_Start <- paste(OTIS$Event_Date, OTIS$Anaesthesia_Start, sep = " ")
+OTIS$Recovery_Takeover <- paste(OTIS$Event_Date, OTIS$Recovery_Takeover, sep = " ")
+
+OTIS$Operation_Start <-  dmy_hms(OTIS$Operation_Start)
+OTIS$Operation_End <- dmy_hms(OTIS$Operation_End)
+OTIS$Anaesthesia_Start <- dmy_hms(OTIS$Anaesthesia_Start)
+OTIS$Recovery_Takeover <- dmy_hms(OTIS$Recovery_Takeover)
+
+OTIS$Surg_Span <- interval(OTIS$Operation_Start, OTIS$Operation_End)
+OTIS$Surg_Span <- as.duration(OTIS$Surg_Span)
+OTIS$Surg_Span <- as.integer(OTIS$Surg_Span)  / 60
+
+OTIS$Anaes_Span <- interval(OTIS$Anaesthesia_Start, OTIS$Recovery_Takeover)
+OTIS$Anaes_Span <- as.duration(OTIS$Anaes_Span)
+OTIS$Anaes_Span <- as.integer(OTIS$Anaes_Span)  / 60
+
+OTIS$Event_Date <- dmy(OTIS$Event_Date)
+
+OTIS <- OTIS %>% 
+  filter(0 < Surg_Span) %>% 
+  filter(0 < Anaes_Span)
+
+OTIS$AdmissionType <- as.factor(OTIS$AdmissionType)
+
+OTIS$DOW <- wday(OTIS$Event_Date)
+OTIS$Hour <- hour(OTIS$Anaesthesia_Start)
+OTIS$Theatre <- as.factor(OTIS$Theatre)
+
+OTIS$TOD <-  ifelse(8 <= OTIS$Hour & OTIS$Hour <= 17, "Daytime", "Afterhours" )
+OTIS$TOD <- as.factor(OTIS$TOD)
+
+OTIS$Operation_Description <- as.factor(OTIS$Operation_Description)
+
+AcuteOT <- OTIS %>% 
+  filter("2017-06-01" <= Event_Date & Event_Date <= "2017-06-30" & AdmissionType == "AC") %>% 
+  filter(Theatre != "M" & Theatre != "O") %>% 
+  filter(Anaes_Span < 400)
+```
+
+##June.2017 data
+
+###Theatre location
+As expected the predominance of acute cases in June.2017 occurred in Theatre Four, the designated acute theatre.
+
+```{r june_acute_location, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = AcuteOT) +
+  geom_bar(aes(x = Theatre, fill = Theatre)) +
+  labs(title = "Number of cases per theatre June.2017", x = "Theatre", y = "Count of Acute cases") +
+  theme_minimal()
+```
+
+###Hour of the day
+Most commonly acute cases occurred during the day (141 cases) s compared to after hours (62 cases). 
+
+```{r june_tod, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = AcuteOT, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "Number of cases by hour of the day June.2017") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+Which is more easy to visualize using a probability density plot
+
+```{r june_density_tod, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = AcuteOT, aes(x = Hour)) +
+  geom_density(aes(fill = TOD)) +
+  labs(title = "Density plot by hour of the day June.2017") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+###Day of week
+Unexpectedly acute cases became more prevalent as the week proceeded, with the lowest volume of cases being in the weekend.
+
+```{r june_dow, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = AcuteOT) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat")))) +
+  labs(title = "Count of cases by Day of Week, June.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+###Case duration
+The cases performed after hours were of shorter duration, than those completed during working hours.
+
+```{r june_duration, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(AcuteOT) +
+  geom_density(aes(Anaes_Span, fill = TOD)) +
+  labs(title = "Density plot by duration & time of the day", x = "Anaesthetic duration (minutes)") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+###Surgical sub-speciality
+Possibly anticipated but General Surgery performed the most acute cases, followed by Orthopaedic surgery and then O&G.
+
+```{r june_subspec, echo=FALSE, warning=FALSE, message=FALSE}
+SubSpec <- AcuteOT %>% 
+  group_by(Specialty_Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(SubSpec)
+```
+
+When considering the distribution of cases across the week by surgical subspeciality (and where 1 = Sunday), the results were;
+
+```{r june_subspec_day, echo=FALSE, warning=FALSE, message=FALSE}
+SubSpec_DOW <- AcuteOT %>% 
+  group_by(Specialty_Description, DOW) %>% 
+  summarise(Count = n())
+
+SubSpec_DOW <- spread(SubSpec_DOW, DOW, Count)
+SubSpec_DOW <- SubSpec_DOW %>% 
+  filter(Specialty_Description != "Gastroenterology" & Specialty_Description != "General Medicine" & Specialty_Description != "Pain Relief")
+
+kable(SubSpec_DOW)
+```
+
+and the top ten most prevalent procedures were;
+
+```{r june_top_10, echo=FALSE, warning=FALSE, message=FALSE}
+AcuteCase <- AcuteOT %>% 
+  group_by(Operation_Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(head(AcuteCase, n = 10))
+```
+
+Of those acute cases undertaken after hours the most frequent were;
+
+```{r june_top_10_ah, echo=FALSE, warning=FALSE, message=FALSE}
+AcuteDay <- AcuteOT %>% 
+  filter(TOD == "Daytime") %>% 
+  group_by(Operation_Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(head(AcuteDay, n = 10))
+```
+
+and in the after hours acute procedures;
+
+```{r june_top_10_day, echo=FALSE, warning=FALSE, message=FALSE}
+AcuteNight <- AcuteOT %>% 
+  filter(TOD == "Afterhours") %>% 
+  group_by(Operation_Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(head(AcuteNight, n = 10))
+```
+
+##November 2017
+Between November and June of 2017, there had been changes in the management of acute cases across all specialties but particularly Orthopaedic surgery.
+
+###Theatre Location
+```{r nov_theatre, echo=FALSE, message=FALSE,warning=FALSE}
+Nov17 <- read_csv("~/R-projects/Clinical_audits/Theatre/OTIS_Nov17.csv")
+
+Nov17 <- Nov17 %>% 
+  rename(Event_Date = 'Event Date', Operation__Description  = 'Operation Description', Speciality_Description = `Specialty Description`)
+
+Nov17$Event_Date <-  dmy(Nov17$Event_Date)
+Nov17$Theatre <- as.factor(Nov17$Theatre)
+
+Nov17 <- Nov17 %>% 
+  rename(Anaesthesia_Start = anaesthesia_start_datetime, Recovery_Takeover = recovery_takeover_datetime)
+
+Nov17$Anaesthesia_Start <- dmy_hm(Nov17$Anaesthesia_Start)
+Nov17$Recovery_Takeover <- dmy_hm(Nov17$Recovery_Takeover)
+
+
+Nov17$Anaes_Span <- interval(Nov17$Anaesthesia_Start, Nov17$Recovery_Takeover)
+Nov17$Anaes_Span <- as.duration(Nov17$Anaes_Span)
+Nov17$Anaes_Span <- as.integer(Nov17$Anaes_Span)  / 60
+
+Nov17 <- Nov17 %>% 
+  filter(0 < Anaes_Span & Anaes_Span < 400)
+
+Nov17$DOW <- wday(Nov17$Event_Date)
+Nov17$Hour <- hour(Nov17$Anaesthesia_Start)
+Nov17$Theatre <- as.factor(Nov17$Theatre)
+
+Nov17$TOD <-  ifelse(8 <= Nov17$Hour & Nov17$Hour <= 17, "Daytime", "Afterhours" )
+Nov17$TOD <- as.factor(Nov17$TOD)
+
+OTIS17 <- Nov17
+
+Nov17 <- Nov17 %>% 
+  filter("2017-11-01" <= Event_Date & Event_Date <= "2017-11-30" & AdmissionType == "AC") %>% 
+  filter(Theatre != "G", Theatre != "M", Theatre != "O", Theatre != "R", Theatre != "T")
+
+ggplot(data = Nov17) +
+  geom_bar(aes(x = Theatre, fill = Theatre)) +
+  labs(title = "Number of cases per theatre Nov.2017", x = "Theatre", y = "Count of Acute cases") +
+  theme_minimal()
+
+```
+
+Aside from a slight rise in number of acute cases occurring in theatre 3 with the corresponding reduction in utilization of theatre 4, little has changed between June and November as location where acute cases are performed.
+
+###By day of the week
+Reveals the peak incidence has moved back from Friday to Thursday.
+
+```{r Nov_dow, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data = Nov17) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat")))) +
+  labs(title = "Count by Day of Week, Nov.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+###By Sub-speciality
+Reveals that Unlike June, in November Orthopaedic surgery as a sub-specialty undertook the most acute procedures. Also do note the reduction in the number of acute cases undertaken by O&G. This reduction by O&G is noticeable but not significant (P = 0.21)
+
+```{r Nov_spec, echo=FALSE, message=FALSE, warning=FALSE}
+SubSpec <- Nov17 %>% 
+  group_by(Specialty_Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(SubSpec)
+```
+
+###By surgical procedure
+The type of procedures undertaken, reflect the overall utilization by sub-specialty and the type of case that require acute care.
+
+```{r Nov_day, echo=FALSE, message=FALSE, warning=FALSE}
+AcuteDay <- Nov17 %>% 
+  filter(TOD == "Daytime") %>% 
+  group_by(Operation__Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(head(AcuteDay, n = 10))
+```
+
+And the top 10 type of cases requiring acute surgery after hours;
+
+```{r Nov_night, echo=FALSE, message=FALSE, warning=FALSE}
+AcuteNight <- Nov17 %>% 
+  filter(TOD == "Afterhours") %>% 
+  group_by(Operation__Description) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count))
+
+kable(head(AcuteNight, n = 10))
+```
+
+###Duration
+```{r Nov_duration, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(Nov17) +
+  geom_density(aes(Anaes_Span, fill = TOD)) +
+  labs(title = "Density plot of case duration, Nov.2017", x = "Anaesthetic duration (minutes)") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+There has been a significant increase in the mean duration of after hours acute cases (P = 0.006), so the previous significant difference in June between the duration of cases performed during the day and after hours (P < 0.001) has been eliminated (P = 0.36)
+
+
+##Summary
+The results from June describe how most acute cases are done in the acute theatre. The short duration cases are done at night, whilst the longer duration acute cases are done during working hours. The ration of acute cases undertaken during the day compared to after hours is 2:1. By specialty General Surgery is the most prevalent followed by orthopedic surgery and the O&G.Cases build by over the week, making Friday the most common day for acute cases to occur, with this build up being most marked in General Surgery. 
+
+In contrast November 2017  reveals a number of changes. There has been a significant increase in the mean duration of after hours acute cases. This change can be solely explained by the non-significant reduction in acute case provision by O&G. A more likely explanation is it reflects a change in anesthetic practice, so only more time dependent in critical cases occur after hours, as reflected by the significant increase in duration.
+
+Otherwise little has changed between June and November in the pattern of acute care provision as seen through the lens of the OTIS data set.

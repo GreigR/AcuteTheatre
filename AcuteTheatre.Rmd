@@ -3,13 +3,13 @@ title: "Analysis of acute theatre usage"
 author: "Dr Greig Russell"
 date: "7 February 2018"
 output:
-  word_document: default
   html_document: default
+  word_document: default
   pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 #Acute theatre usage
@@ -316,7 +316,7 @@ Reveals that Unlike June, in November Orthopaedic surgery as a sub-specialty und
 
 ```{r Nov_spec, echo=FALSE, message=FALSE, warning=FALSE}
 SubSpec <- Nov17 %>% 
-  group_by(Specialty_Description) %>% 
+  group_by(Speciality_Description) %>% 
   summarise(Count = n()) %>% 
   arrange(desc(Count))
 

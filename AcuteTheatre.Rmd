@@ -20,6 +20,7 @@ library(tidyverse)
 library(lubridate)
 library(knitr)
 library(rmarkdown)
+library(gridExtra)
 ```
 
 ```{r load_the_data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -300,7 +301,7 @@ ggplot(data = Nov17) +
 Aside from a slight rise in number of acute cases occurring in theatre 3 with the corresponding reduction in utilization of theatre 4, little has changed between June and November as location where acute cases are performed.
 
 ###By day of the week
-Reveals the peak incidence has moved back from Friday to Thursday.
+Reveals the peak incidence has moved back from Friday to Thursday as well as the total number of acute cases is less.
 
 ```{r Nov_dow, echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = Nov17) +
@@ -310,6 +311,28 @@ ggplot(data = Nov17) +
   theme_minimal() +
   theme(axis.text.x = element_blank(), axis.ticks = element_blank())
 ```
+
+and this is in contrast to the Friday peak noted in June.17.
+
+```{r nov_comp_dow, echo=FALSE, message=FALSE, warning=FALSE}
+P1 <- ggplot(data = AcuteOT) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat")))) +
+  labs(title = "June.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+  
+P2 <- ggplot(data = Nov17) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat")))) +
+  labs(title = "Nov.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  ylim(0, 50) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+
+grid.arrange(P1, P2, ncol = 2)
+```
+
 
 ###By Sub-speciality
 Reveals that Unlike June, in November Orthopaedic surgery as a sub-specialty undertook the most acute procedures. Also do note the reduction in the number of acute cases undertaken by O&G. This reduction by O&G is noticeable but not significant (P = 0.21)
@@ -357,8 +380,27 @@ ggplot(Nov17) +
   theme_minimal()
 ```
 
-There has been a significant increase in the mean duration of after hours acute cases (P = 0.006), so the previous significant difference in June between the duration of cases performed during the day and after hours (P < 0.001) has been eliminated (P = 0.36)
+There has been a significant increase in the mean duration of after hours acute cases (P = 0.006), so the previous significant difference in June between the duration of cases performed during the day and after hours (P < 0.001) has been eliminated (P = 0.36).
 
+In comparison to June.2017
+
+```{r nov_jun_dur, echo=FALSE, message=FALSE, warning=FALSE}
+P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "June.2017") +
+  ylim(0, 25) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+P2 <- ggplot(data = Nov17, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "Nov.2017") +
+  ylim(0, 25) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+grid.arrange(P1, P2, ncol = 2)
+```
 
 ##Summary
 The results from June describe how most acute cases are done in the acute theatre. The short duration cases are done at night, whilst the longer duration acute cases are done during working hours. The ration of acute cases undertaken during the day compared to after hours is 2:1. By specialty General Surgery is the most prevalent followed by orthopedic surgery and the O&G.Cases build by over the week, making Friday the most common day for acute cases to occur, with this build up being most marked in General Surgery. 

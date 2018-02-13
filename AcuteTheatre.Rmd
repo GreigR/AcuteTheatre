@@ -3,8 +3,8 @@ title: "Analysis of acute theatre usage"
 author: "Dr Greig Russell"
 date: "7 February 2018"
 output:
-  html_document: default
   word_document: default
+  html_document: default
   pdf_document: default
 ---
 
@@ -14,6 +14,15 @@ knitr::opts_chunk$set(echo = FALSE)
 
 #Acute theatre usage
 The aim of this analysis was to consider usage of acute theatres. The original intention was for the analysis to focus on only Nov.2017, but the data was not initially available. The first phase of the analysis therefore focused on June.2017. Subsequently the Nov.2017 data became available, allowing the analysis to be expanding. Comparison of utilization for acute cases between the two months reveals some unexpected differences. 
+
+##Executive summary
+The results from June describe how most acute cases are done in the acute theatre. The short duration cases are done at night, whilst the longer duration acute cases are done during working hours. The ratio of acute cases undertaken during the day compared to after hours is 2:1. By specialty General Surgery is the most prevalent followed by orthopedic surgery and the O&G. Cases build by over the week, making Friday the most common day for acute cases to occur, with this build up being most marked in General Surgery. 
+
+In contrast November 2017 reveals a number of changes. The number of acute cases has reduced in general, but especially in the after hours. Notably, but not significantly, O&G has reduced its utilization of acute theatre in Nov.2017. Associated with this reduction in utilization was a statistically significant growth in the mean duration of cases. There is a slight shift back in the busiest day of acutes from Friday in June to Thursday in November. The shift is slight, not significant and is accompanied by more orthopaedic acutes in November as compared to General surgery. The number of cases performed in each theatre has remained similar.
+
+Given the later I performed a separate analysis of "acute arranged"" to test if the reduction was a classification artificial, but this analysis did not reveal significant change between June and November. If anything it mirrored the changes seen in the Acute theatre utilization.
+
+The most likely cause for the changes seen in this analysis is a cultural shift so that acute surgery, particular after hours, to only those cases where life or limb are under threat. 
 
 ```{r load_the_libraries, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -383,7 +392,7 @@ ggplot(data = Nov17, aes(x = Hour)) +
   theme_minimal()
 ```
 
-In comparsion to June.2017 the other notable change is that the acute cases are being performed at the end of the day as opposed to the beginning;
+In comparison to June.2017 the other notable change is that the acute cases are being performed at the end of the day as opposed to the beginning;
 
 ```{r nov_jun_hod, echo=FALSE, message=FALSE, warning=FALSE}
 P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
@@ -391,14 +400,16 @@ P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
   labs(title = "June.2017") +
   ylim(0, 25) +
   guides(fill = guide_legend(title = "Time of Day")) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top")
 
 P2 <- ggplot(data = Nov17, aes(x = Hour)) +
   geom_bar(aes(fill = TOD)) +
   labs(title = "Nov.2017") +
   ylim(0, 25) +
   guides(fill = guide_legend(title = "Time of Day")) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top")
 
 grid.arrange(P1, P2, ncol = 2)
 ```
@@ -438,8 +449,10 @@ grid.arrange(P1, P2, ncol = 2)
 ```
 
 ##Summary
-The results from June describe how most acute cases are done in the acute theatre. The short duration cases are done at night, whilst the longer duration acute cases are done during working hours. The ration of acute cases undertaken during the day compared to after hours is 2:1. By specialty General Surgery is the most prevalent followed by orthopedic surgery and the O&G.Cases build by over the week, making Friday the most common day for acute cases to occur, with this build up being most marked in General Surgery. 
+The results from June describe how most acute cases are done in the acute theatre. The short duration cases are done at night, whilst the longer duration acute cases are done during working hours. The ratio of acute cases undertaken during the day compared to after hours is 2:1. By specialty General Surgery is the most prevalent followed by orthopedic surgery and the O&G. Cases build by over the week, making Friday the most common day for acute cases to occur, with this build up being most marked in General Surgery. 
 
-In contrast November 2017  reveals a number of changes. There has been a significant increase in the mean duration of after hours acute cases. This change can be solely explained by the non-significant reduction in acute case provision by O&G. A more likely explanation is it reflects a change in anesthetic practice, so only more time dependent in critical cases occur after hours, as reflected by the significant increase in duration.
+In contrast November 2017 reveals a number of changes. The number of acute cases has reduced in general, but especially in the after hours. Notably, but not significantly, O&G has reduced its utilization of acute theatre in Nov.2017. Associated with this reduction in utilization was a statistically significant growth in the mean duration of cases. There is a slight shift back in the busiest day of acutes from Friday in June to Thursday in November. The shift is slight, not significant and is accompanied by more orthopaedic acutes in November as compared to General surgery. The number of cases performed in each theatre has remained similar.
 
-Otherwise little has changed between June and November in the pattern of acute care provision as seen through the lens of the OTIS data set.
+Given the later I performed a separate analysis of "acute arranged"" to test if the reduction was a classification artificial, but this analysis did not reveal significant change between June and November. If anything it mirrored the changes seen in the Acute theatre utilization.
+
+The most likely cause for the changes seen in this analysis is a cultural shift so that acute surgery, particular after hours, to only those cases where life or limb are under threat. 

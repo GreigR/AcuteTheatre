@@ -13,6 +13,7 @@ library(tidyverse)
 library(lubridate)
 library(knitr)
 library(gmodels)
+library(gridExtra)
 ```
 
 ```{r}
@@ -327,6 +328,54 @@ Nov17 <- Nov17 %>%
   filter("2017-11-01" <= Event_Date & Event_Date <= "2017-11-30" & AdmissionType == "AC") %>% 
   filter(Theatre != "G", Theatre != "M", Theatre != "O", Theatre != "R", Theatre != "T")
 ```
+
+```{r}
+ggplot(data = Nov17, aes(x = Hour)) +
+  geom_density(aes(fill = TOD)) +
+  labs(title = "Density plot of Acute case by hour of the day Nov.2017") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+
+```{r}
+
+P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
+  geom_density(aes(fill = TOD)) +
+  labs(title = "June.2017") +
+  ylim(0,0.2) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+P2 <- ggplot(data = Nov17, aes(x = Hour)) +
+  geom_density(aes(fill = TOD)) +
+  labs(title = "Nov.2017") +
+  ylim(0, 0.2) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+grid.arrange(P1, P2, ncol = 2)
+```
+
+
+```{r}
+P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "June.2017") +
+  ylim(0, 25) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+P2 <- ggplot(data = Nov17, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "Nov.2017") +
+  ylim(0, 25) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+
+grid.arrange(P1, P2, ncol = 2)
+```
+
 
 
 ```{r}

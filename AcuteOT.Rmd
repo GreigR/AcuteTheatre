@@ -518,3 +518,115 @@ SubSpec <- Nov17 %>%
 kable(SubSpec)
 ```
 
+```{r}
+
+OTIS <- read_csv("/home/greig/R-projects/Clinical_audits/Theatre/OTIS_rawData.csv", col_names = Column_names, skip = 1)
+
+OTIS$Operation_Start <- as.character(OTIS$Operation_Start)
+OTIS$Operation_End <- as.character(OTIS$Operation_End)
+
+OTIS$Operation_Start <- paste(OTIS$Event_Date, OTIS$Operation_Start, sep = " ")
+OTIS$Operation_End <- paste(OTIS$Event_Date, OTIS$Operation_End, sep = " ")
+OTIS$Anaesthesia_Start <- paste(OTIS$Event_Date, OTIS$Anaesthesia_Start, sep = " ")
+OTIS$Recovery_Takeover <- paste(OTIS$Event_Date, OTIS$Recovery_Takeover, sep = " ")
+
+OTIS$Operation_Start <-  dmy_hms(OTIS$Operation_Start)
+OTIS$Operation_End <- dmy_hms(OTIS$Operation_End)
+OTIS$Anaesthesia_Start <- dmy_hms(OTIS$Anaesthesia_Start)
+OTIS$Recovery_Takeover <- dmy_hms(OTIS$Recovery_Takeover)
+
+OTIS$Surg_Span <- interval(OTIS$Operation_Start, OTIS$Operation_End)
+OTIS$Surg_Span <- as.duration(OTIS$Surg_Span)
+OTIS$Surg_Span <- as.integer(OTIS$Surg_Span)  / 60
+
+OTIS$Anaes_Span <- interval(OTIS$Anaesthesia_Start, OTIS$Recovery_Takeover)
+OTIS$Anaes_Span <- as.duration(OTIS$Anaes_Span)
+OTIS$Anaes_Span <- as.integer(OTIS$Anaes_Span)  / 60
+
+OTIS$Event_Date <- dmy(OTIS$Event_Date)
+
+OTIS <- OTIS %>% 
+  filter(0 < Surg_Span) %>% 
+  filter(0 < Anaes_Span)
+
+OTIS$AdmissionType <- as.factor(OTIS$AdmissionType)
+
+OTIS$DOW <- wday(OTIS$Event_Date)
+OTIS$Hour <- hour(OTIS$Anaesthesia_Start)
+OTIS$Theatre <- as.factor(OTIS$Theatre)
+
+OTIS$TOD <-  ifelse(8 <= OTIS$Hour & OTIS$Hour <= 17, "Daytime", "Afterhours" )
+OTIS$TOD <- as.factor(OTIS$TOD)
+
+AcuteArranged <- OTIS %>% 
+  filter("2017-06-01" <= Event_Date & Event_Date <= "2017-06-30" & AdmissionType == "AA") %>% 
+  filter(Theatre != "M" & Theatre != "O") %>% 
+  filter(Anaes_Span < 400)
+```
+
+```{r}
+ggplot(data = AcuteArranged) +
+  geom_bar(aes(x = Theatre, fill = Theatre)) +
+  labs(title = "Number of AA cases per theatre June.2017", x = "Theatre", y = "Count of Acute cases") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data = AcuteArranged) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri")))) +
+  labs(title = "Count of AA cases by Day of Week, June.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+```{r}
+ggplot(data = AcuteArranged, aes(x = Hour)) +
+  geom_density(aes(fill = TOD)) +
+  labs(title = "Density plot of AA case by hour of the day June.2017") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+```{r}
+AA17 <- read_csv("~/R-projects/Clinical_audits/Theatre/OTIS_Nov17.csv")
+
+AA17 <- AA17 %>% 
+  rename(Event_Date = 'Event Date', Operation__Description  = 'Operation Description', Speciality_Description = `Specialty Description`)
+
+AA17$Event_Date <-  dmy(AA17$Event_Date)
+AA17$Theatre <- as.factor(AA17$Theatre)
+
+AA17 <- AA17 %>% 
+  rename(Anaesthesia_Start = anaesthesia_start_datetime, Recovery_Takeover = recovery_takeover_datetime)
+
+AA17$Anaesthesia_Start <- dmy_hm(AA17$Anaesthesia_Start)
+AA17$Recovery_Takeover <- dmy_hm(AA17$Recovery_Takeover)
+
+
+AA17$Anaes_Span <- interval(AA17$Anaesthesia_Start, AA17$Recovery_Takeover)
+AA17$Anaes_Span <- as.duration(AA17$Anaes_Span)
+AA17$Anaes_Span <- as.integer(AA17$Anaes_Span)  / 60
+
+AA17 <- AA17 %>% 
+  filter(0 < Anaes_Span & Anaes_Span < 400)
+
+AA17$DOW <- wday(AA17$Event_Date)
+AA17$Hour <- hour(AA17$Anaesthesia_Start)
+AA17$Theatre <- as.factor(AA17$Theatre)
+
+AA17$TOD <-  ifelse(8 <= AA17$Hour & AA17$Hour <= 17, "Daytime", "Afterhours" )
+AA17$TOD <- as.factor(AA17$TOD)
+
+AA17 <- AA17 %>% 
+  filter("2017-11-01" <= Event_Date & Event_Date <= "2017-11-30" & AdmissionType == "AA") %>% 
+  filter(Theatre != "G", Theatre != "M", Theatre != "O", Theatre != "R", Theatre != "T")
+```
+
+```{r}
+ggplot(data = AA17) +
+  geom_bar(aes(x = Theatre, fill = Theatre)) +
+  labs(title = "Number of AA cases per theatre Nov.2017", x = "Theatre", y = "Count of Acute cases") +
+  theme_minimal()
+```
+

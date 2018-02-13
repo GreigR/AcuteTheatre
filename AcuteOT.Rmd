@@ -630,3 +630,12 @@ ggplot(data = AA17) +
   theme_minimal()
 ```
 
+```{r}
+ggplot(data = AA17) +
+  geom_bar(aes(x = DOW, fill = factor(DOW, labels = c("Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat")))) +
+  labs(title = "Count of AA cases by Day of Week, Nov.2017", x = "Day of week") +
+  guides(fill = guide_legend(title = "Day of week")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+

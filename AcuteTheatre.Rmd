@@ -371,20 +371,21 @@ AcuteNight <- Nov17 %>%
 kable(head(AcuteNight, n = 10))
 ```
 
-###Duration
-```{r Nov_duration, echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(Nov17) +
-  geom_density(aes(Anaes_Span, fill = TOD)) +
-  labs(title = "Density plot of case duration, Nov.2017", x = "Anaesthetic duration (minutes)") +
+###By hour of day
+The number of acute cases performed outside of working hours has shown an obvious reduction in Nov.2017
+
+```{r nov_how, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data = Nov17, aes(x = Hour)) +
+  geom_bar(aes(fill = TOD)) +
+  labs(title = "Acute cases by hour of day, Nov.2017") +
+  ylim(0, 25) +
   guides(fill = guide_legend(title = "Time of Day")) +
   theme_minimal()
 ```
 
-There has been a significant increase in the mean duration of after hours acute cases (P = 0.006), so the previous significant difference in June between the duration of cases performed during the day and after hours (P < 0.001) has been eliminated (P = 0.36).
+In comparsion to June.2017 the other notable change is that the acute cases are being performed at the end of the day as opposed to the beginning;
 
-In comparison to June.2017
-
-```{r nov_jun_dur, echo=FALSE, message=FALSE, warning=FALSE}
+```{r nov_jun_hod, echo=FALSE, message=FALSE, warning=FALSE}
 P1 <- ggplot(data = AcuteOT, aes(x = Hour)) +
   geom_bar(aes(fill = TOD)) +
   labs(title = "June.2017") +
@@ -398,6 +399,40 @@ P2 <- ggplot(data = Nov17, aes(x = Hour)) +
   ylim(0, 25) +
   guides(fill = guide_legend(title = "Time of Day")) +
   theme_minimal()
+
+grid.arrange(P1, P2, ncol = 2)
+```
+
+###Duration
+```{r Nov_duration, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(Nov17) +
+  geom_density(aes(Anaes_Span, fill = TOD)) +
+  labs(title = "Density plot of case duration, Nov.2017", x = "Anaesthetic duration (minutes)") +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal()
+```
+
+There has been a significant increase in the mean duration of after hours acute cases (P = 0.006), so the previous significant difference in June between the duration of cases performed during the day and after hours (P < 0.001) has been eliminated (P = 0.36).
+
+In comparison to June.2017 the density plot shows both the reduction in numbers of acute cases performed after hours and the increase in the mean duration of the cases.
+
+```{r nov_jun_dur, echo=FALSE, message=FALSE, warning=FALSE}
+
+P1 <- ggplot(AcuteOT) +
+  geom_density(aes(Anaes_Span, fill = TOD)) +
+  labs(title = "Jun.2017", x = "Anaesthetic duration (minutes)") +
+  ylim(0, 0.015) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+P2 <- ggplot(Nov17) +
+  geom_density(aes(Anaes_Span, fill = TOD)) +
+  labs(title = "Nov.2017", x = "Anaesthetic duration (minutes)") +
+  ylim(0, 0.015) +
+  guides(fill = guide_legend(title = "Time of Day")) +
+  theme_minimal() +
+  theme(legend.position = "top")
 
 grid.arrange(P1, P2, ncol = 2)
 ```
